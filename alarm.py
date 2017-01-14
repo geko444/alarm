@@ -1,5 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.common.keys import Keys
 
 def time_to_hhmm(time):
     if ':' in time:
@@ -55,22 +56,27 @@ def time_range(start, end, step):
     mins = mins_range(time_to_mins(start), time_to_mins(end), step)
     return [mins_to_hhmm(min) for min in mins]
 
-def load_clock():
-    driver.execute_script("window.open('http://www.onlineclock.net');")
-    window_after = driver.window_handles[-1]
-    driver.switch_to.window(window_after)
+def load_clock(first):
+    if first == 0:
+        driver.execute_script("window.open('http://www.onlineclock.net');")
+        window_after = driver.window_handles[-1]
+        driver.switch_to.window(window_after)
+    else:
+        driver.get('http://www.onlineclock.net')
 
-def set_alarm(hhmm):
+def set_alarm(hhmm, first):
     hh, mm = [str(n) for n in hhmm]
-    load_clock()
+    load_clock(first)
     hour = Select(driver.find_element_by_name('alarm_hour'))
     hour.select_by_value(hh)
     minute = Select(driver.find_element_by_name('alarm_minute'))
     minute.select_by_value(mm)
 
 def set_alarms(start, end, step):
-    for hhmm in time_range(start, end, step):
-        set_alarm(hhmm)
+    times = time_range(start, end, step)
+    set_alarm(times[0], 1)
+    for time in times[1:]:
+        set_alarm(time, 0)
 
 
 def ask_user():
@@ -82,6 +88,5 @@ def ask_user():
 start, end, step = ask_user()
 
 driver = webdriver.Chrome()
-window = driver.window_handles[0]
-
 set_alarms(start, end, step)
+driver.find_element_by_tag_name("body").send_keys(Keys.ALT + Keys.NUMPAD1)
